@@ -24,9 +24,11 @@ export type { EstimateBuilderPageProps } from './EstimateBuilderPage'
 export { ContactsPage } from './ContactsPage'
 export type { ContactsPageProps } from './ContactsPage'
 
+export { InvoicesPage } from './InvoicesPage'
+export type { InvoicesPageProps } from './InvoicesPage'
+
 export { 
   PlaceholderPage,
-  InvoicesPage,
   CalendarPage,
   ReportsPage,
   SettingsPage,

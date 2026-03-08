@@ -18,3 +18,6 @@ export type { ContactsState, ContactsFilters, Contact, Property } from './contac
 
 export { useEstimatesStore } from './estimates'
 export type { EstimatesState, EstimatesFilters, Estimate, EstimateLineItem, EstimateTemplate, EstimateStatus } from './estimates'
+
+export { useInvoicesStore } from './invoices'
+export type { InvoicesState, InvoicesFilters } from './invoices'

@@ -43,16 +43,7 @@ export function PlaceholderPage({
 }
 
 // Pre-configured placeholder pages
-export function InvoicesPage({ onNavigate }: { onNavigate?: (path: string) => void }) {
-  return (
-    <PlaceholderPage
-      title="Invoices"
-      description="Invoice management and payment tracking coming soon."
-      onNavigate={onNavigate}
-    />
-  )
-}
-
+// InvoicesPage moved to InvoicesPage.tsx with real implementation
 // ContactsPage moved to ContactsPage.tsx with real implementation
 
 export function CalendarPage({ onNavigate }: { onNavigate?: (path: string) => void }) {

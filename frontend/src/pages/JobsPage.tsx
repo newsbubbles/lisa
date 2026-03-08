@@ -42,7 +42,7 @@ export function JobsPage({ onNavigate }: JobsPageProps) {
     openDrawer('job', job.id)
   }
 
-  const handleJobMove = async (jobId: string, fromStatus: JobStatus, toStatus: JobStatus) => {
+  const handleJobMove = async (jobId: string, _fromStatus: JobStatus, toStatus: JobStatus) => {
     try {
       // Find the target stage ID for the new status
       const targetColumn = boardColumns.find(col => col.status === toStatus)

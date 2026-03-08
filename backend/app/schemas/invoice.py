@@ -82,6 +82,19 @@ class InvoiceUpdate(BaseModel):
     terms: str | None = None
 
 
+class JobSummaryForInvoice(BaseModel):
+    """Minimal job info for invoice display."""
+    id: UUID
+    title: str
+    job_number: str
+    customer_name: str | None = None
+    customer_email: str | None = None
+    property_address: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
 class InvoiceResponse(BaseModel):
     """Invoice response schema."""
     id: UUID
@@ -120,6 +133,7 @@ class InvoiceResponse(BaseModel):
     # Related
     line_items: list[InvoiceLineItemResponse]
     payments: list[PaymentResponse]
+    job: JobSummaryForInvoice | None = None
     
     is_overdue: bool
     created_at: datetime

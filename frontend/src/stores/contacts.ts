@@ -6,38 +6,13 @@
 
 import { create } from 'zustand'
 import { api } from '@/lib/api'
+import type { Contact, Property } from '@/types/contact'
 
-export interface Contact {
-  id: string
-  firstName: string
-  lastName: string
-  email?: string
-  phone?: string
-  mobilePhone?: string
-  company?: string
-  type: 'residential' | 'commercial' | 'insurance'
-  source?: string
-  tags: string[]
-  notes?: string
-  properties: Property[]
-  createdAt: string
-  updatedAt: string
-}
-
-export interface Property {
-  id: string
-  street: string
-  city: string
-  state: string
-  zip: string
-  isPrimary: boolean
-  propertyType?: 'residential' | 'commercial' | 'multi_family'
-  roofType?: string
-  lastInspectionDate?: string
-}
+// Re-export types for backward compatibility
+export type { Contact, Property }
 
 export interface ContactsFilters {
-  type?: Contact['type'][]
+  type?: string[]
   tags?: string[]
   search?: string
   hasJobs?: boolean

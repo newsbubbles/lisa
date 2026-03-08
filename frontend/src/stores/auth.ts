@@ -277,9 +277,9 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         // Don't persist user - always fetch fresh on init
       }),
-      onRehydrate: () => {
+      onRehydrateStorage: () => {
         // After rehydration, set the auth header if we have a token
-        return (state) => {
+        return (state: AuthState | undefined) => {
           if (state?.accessToken) {
             setAuthHeader(state.accessToken)
           }

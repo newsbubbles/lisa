@@ -13,7 +13,7 @@ from app.models.invoice import Invoice, InvoiceLineItem, Payment, InvoiceStatus
 from app.models.job import Job
 from app.schemas.invoice import (
     InvoiceCreate, InvoiceUpdate, InvoiceResponse,
-    PaymentCreate, PaymentResponse,
+    PaymentCreate, PaymentResponse, JobSummaryForInvoice,
 )
 
 router = APIRouter()
@@ -24,6 +24,30 @@ def generate_invoice_number(org_id: UUID) -> str:
     date_part = datetime.utcnow().strftime("%Y")
     random_part = uuid.uuid4().hex[:4].upper()
     return f"INV-{date_part}-{random_part}"
+
+
+def build_job_summary(job: Job) -> JobSummaryForInvoice:
+    """Build job summary for invoice display."""
+    customer_name = None
+    customer_email = None
+    property_address = None
+    
+    if job.contact:
+        customer_name = f"{job.contact.first_name} {job.contact.last_name}".strip()
+        customer_email = job.contact.email
+    
+    if job.property:
+        parts = [job.property.street, job.property.city, job.property.state, job.property.zip]
+        property_address = ", ".join(p for p in parts if p)
+    
+    return JobSummaryForInvoice(
+        id=job.id,
+        title=job.title,
+        job_number=job.job_number,
+        customer_name=customer_name,
+        customer_email=customer_email,
+        property_address=property_address,
+    )
 
 
 def calculate_invoice_totals(invoice: Invoice) -> None:
@@ -64,6 +88,8 @@ async def list_invoices(
     status: InvoiceStatus | None = None,
 ):
     """List invoices."""
+    from app.models.contact import Contact, Property
+    
     # Get job IDs for this organization
     jobs_query = select(Job.id).where(Job.organization_id == organization.id)
     
@@ -72,6 +98,8 @@ async def list_invoices(
         .options(
             selectinload(Invoice.line_items),
             selectinload(Invoice.payments),
+            selectinload(Invoice.job).selectinload(Job.contact),
+            selectinload(Invoice.job).selectinload(Job.property),
         )
         .where(Invoice.job_id.in_(jobs_query))
     )
@@ -83,7 +111,44 @@ async def list_invoices(
         query = query.where(Invoice.status == status)
     
     result = await db.execute(query.order_by(Invoice.created_at.desc()))
-    return result.scalars().all()
+    invoices = result.scalars().all()
+    
+    # Transform to include job summary
+    response_list = []
+    for invoice in invoices:
+        invoice_dict = {
+            "id": invoice.id,
+            "job_id": invoice.job_id,
+            "invoice_number": invoice.invoice_number,
+            "status": invoice.status,
+            "invoice_date": invoice.invoice_date,
+            "due_date": invoice.due_date,
+            "sent_at": invoice.sent_at,
+            "paid_at": invoice.paid_at,
+            "subtotal": invoice.subtotal,
+            "tax_rate": invoice.tax_rate,
+            "tax_amount": invoice.tax_amount,
+            "discount_amount": invoice.discount_amount,
+            "total": invoice.total,
+            "amount_paid": invoice.amount_paid,
+            "balance_due": invoice.balance_due,
+            "notes": invoice.notes,
+            "terms": invoice.terms,
+            "pdf_url": invoice.pdf_url,
+            "payment_link": invoice.payment_link,
+            "stripe_invoice_id": invoice.stripe_invoice_id,
+            "quickbooks_invoice_id": invoice.quickbooks_invoice_id,
+            "quickbooks_sync_status": invoice.quickbooks_sync_status,
+            "line_items": invoice.line_items,
+            "payments": invoice.payments,
+            "job": build_job_summary(invoice.job) if invoice.job else None,
+            "is_overdue": invoice.is_overdue,
+            "created_at": invoice.created_at,
+            "updated_at": invoice.updated_at,
+        }
+        response_list.append(InvoiceResponse(**invoice_dict))
+    
+    return response_list
 
 
 @router.post("", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
@@ -160,6 +225,8 @@ async def get_invoice(
         .options(
             selectinload(Invoice.line_items),
             selectinload(Invoice.payments),
+            selectinload(Invoice.job).selectinload(Job.contact),
+            selectinload(Invoice.job).selectinload(Job.property),
         )
         .where(Invoice.id == invoice_id, Invoice.job_id.in_(jobs_query))
     )
@@ -168,7 +235,38 @@ async def get_invoice(
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     
-    return invoice
+    # Build response with job summary
+    invoice_dict = {
+        "id": invoice.id,
+        "job_id": invoice.job_id,
+        "invoice_number": invoice.invoice_number,
+        "status": invoice.status,
+        "invoice_date": invoice.invoice_date,
+        "due_date": invoice.due_date,
+        "sent_at": invoice.sent_at,
+        "paid_at": invoice.paid_at,
+        "subtotal": invoice.subtotal,
+        "tax_rate": invoice.tax_rate,
+        "tax_amount": invoice.tax_amount,
+        "discount_amount": invoice.discount_amount,
+        "total": invoice.total,
+        "amount_paid": invoice.amount_paid,
+        "balance_due": invoice.balance_due,
+        "notes": invoice.notes,
+        "terms": invoice.terms,
+        "pdf_url": invoice.pdf_url,
+        "payment_link": invoice.payment_link,
+        "stripe_invoice_id": invoice.stripe_invoice_id,
+        "quickbooks_invoice_id": invoice.quickbooks_invoice_id,
+        "quickbooks_sync_status": invoice.quickbooks_sync_status,
+        "line_items": invoice.line_items,
+        "payments": invoice.payments,
+        "job": build_job_summary(invoice.job) if invoice.job else None,
+        "is_overdue": invoice.is_overdue,
+        "created_at": invoice.created_at,
+        "updated_at": invoice.updated_at,
+    }
+    return InvoiceResponse(**invoice_dict)
 
 
 @router.patch("/{invoice_id}", response_model=InvoiceResponse)

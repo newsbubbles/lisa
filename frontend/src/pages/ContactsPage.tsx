@@ -7,7 +7,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { useUIStore } from '@/stores/uiStore'
 import { useContactsStore, type Contact } from '@/stores/contacts'
 import type { ContactFilters, ContactType } from '@/types/contact'
-import { Plus, Users, RefreshCw } from 'lucide-react'
+import { Plus, RefreshCw } from 'lucide-react'
 
 export interface ContactsPageProps {
   onNavigate?: (path: string) => void

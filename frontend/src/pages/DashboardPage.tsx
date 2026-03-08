@@ -76,7 +76,7 @@ interface ActivityItemProps {
   icon: React.ReactNode
 }
 
-function ActivityItem({ title, description, time, icon }: ActivityItemProps) {
+export function ActivityItem({ title, description, time, icon }: ActivityItemProps) {
   return (
     <div className="flex items-start gap-3 py-3">
       <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
@@ -99,7 +99,7 @@ interface TaskItemProps {
   onToggle?: () => void
 }
 
-function TaskItem({ title, dueDate, priority, onToggle }: TaskItemProps) {
+export function TaskItem({ title, dueDate, priority, onToggle }: TaskItemProps) {
   const priorityColors = {
     high: 'bg-red-100 text-red-700',
     medium: 'bg-yellow-100 text-yellow-700',
@@ -170,7 +170,7 @@ export interface DashboardPageProps {
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { setPageTitle } = useUIStore()
   const { boardColumns, isLoading: jobsLoading, fetchBoardData } = useJobsStore()
-  const { contacts, totalCount: contactsCount, isLoading: contactsLoading, fetchContacts } = useContactsStore()
+  const { contacts: _contacts, totalCount: _contactsCount, isLoading: contactsLoading, fetchContacts } = useContactsStore()
 
   React.useEffect(() => {
     setPageTitle('Dashboard')

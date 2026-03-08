@@ -4,6 +4,7 @@ import { Button, Spinner, EmptyState } from '@/components/ui'
 import { Input } from '@/components/ui/Input'
 import { useUIStore } from '@/stores/uiStore'
 import { useInvoicesStore } from '@/stores/invoices'
+import { InvoiceDetailsDrawer } from '@/components/invoices/InvoiceDetailsDrawer'
 import {
   type Invoice,
   type InvoiceStatus,
@@ -277,6 +278,8 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
   const [statusFilter, setStatusFilter] = React.useState<InvoiceStatus | 'all'>(
     'all'
   )
+  const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null)
+  const [drawerOpen, setDrawerOpen] = React.useState(false)
 
   React.useEffect(() => {
     setPageTitle('Invoices')
@@ -332,8 +335,15 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
     return { total, draft, pending, paid, overdue, totalValue, totalOutstanding }
   }, [invoices])
 
-  const handleView = (id: string) => {
-    onNavigate?.(`/invoices/${id}`)
+  const handleView = (invoice: Invoice) => {
+    setSelectedInvoice(invoice)
+    setDrawerOpen(true)
+  }
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false)
+    // Clear selected invoice after animation completes
+    setTimeout(() => setSelectedInvoice(null), 300)
   }
 
   const handleEdit = (id: string) => {
@@ -558,7 +568,7 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
                       <InvoiceRow
                         key={invoice.id}
                         invoice={invoice}
-                        onView={() => handleView(invoice.id)}
+                        onView={() => handleView(invoice)}
                         onEdit={() => handleEdit(invoice.id)}
                         onSend={() => handleSend(invoice.id)}
                         onRecordPayment={() => handleRecordPayment(invoice.id)}
@@ -577,12 +587,37 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
               <InvoiceCard
                 key={invoice.id}
                 invoice={invoice}
-                onView={() => handleView(invoice.id)}
+                onView={() => handleView(invoice)}
               />
             ))}
           </div>
         </>
       )}
+
+      {/* Invoice Details Drawer */}
+      <InvoiceDetailsDrawer
+        invoice={selectedInvoice}
+        open={drawerOpen}
+        onClose={handleCloseDrawer}
+        onEdit={(inv) => {
+          handleCloseDrawer()
+          handleEdit(inv.id)
+        }}
+        onSend={(inv) => handleSend(inv.id)}
+        onRecordPayment={(inv) => {
+          handleCloseDrawer()
+          handleRecordPayment(inv.id)
+        }}
+        onDownloadPdf={(inv) => {
+          // TODO: Implement PDF download
+          console.log('Download PDF for invoice:', inv.id)
+        }}
+        onViewJob={(jobId) => {
+          handleCloseDrawer()
+          onNavigate?.(`/jobs/${jobId}`)
+        }}
+        onDelete={(inv) => handleDelete(inv.id)}
+      />
     </div>
   )
 }

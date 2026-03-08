@@ -10,8 +10,6 @@ import {
   Copy,
   Check,
   Calendar,
-  DollarSign,
-  FileText,
   Send,
   Download,
   CreditCard,
@@ -26,7 +24,6 @@ import type {
   InvoiceLineItem,
   Payment,
   InvoiceStatus,
-  PaymentMethod,
 } from '@/types/invoice'
 import { INVOICE_STATUS_CONFIG, PAYMENT_METHOD_LABELS } from '@/types/invoice'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -77,7 +74,6 @@ export function InvoiceDetailsDrawer({
 
   if (!invoice) return null
 
-  const statusConfig = INVOICE_STATUS_CONFIG[invoice.status]
   const canSend = invoice.status === 'draft'
   const canRecordPayment = ['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status)
   const canEdit = invoice.status === 'draft'

@@ -14,6 +14,10 @@ import {
   CalendarPage,
   ReportsPage,
   SettingsPage,
+  ForgotPasswordPage,
+  ProfilePage,
+  HelpPage,
+  NewJobPage,
 } from '@/pages'
 import { useAuthStore } from '@/stores/auth'
 import { useUIStore } from '@/stores/uiStore'
@@ -23,6 +27,7 @@ import { Spinner } from '@/components/ui'
 const routeToPageId: Record<string, string> = {
   '/': 'dashboard',
   '/jobs': 'jobs',
+  '/jobs/new': 'jobs',
   '/estimates': 'estimates',
   '/estimates/new': 'estimates',
   '/invoices': 'invoices',
@@ -30,6 +35,8 @@ const routeToPageId: Record<string, string> = {
   '/calendar': 'calendar',
   '/reports': 'reports',
   '/settings': 'settings',
+  '/profile': 'settings',
+  '/help': 'settings',
 }
 
 /**
@@ -67,7 +74,7 @@ function AuthenticatedApp() {
   const handleQuickAction = (action: string) => {
     switch (action) {
       case 'job':
-        navigate('/jobs')
+        navigate('/jobs/new')
         break
       case 'estimate':
         navigate('/estimates/new')
@@ -137,6 +144,7 @@ function AuthenticatedApp() {
         
         {/* Jobs */}
         <Route path="/jobs" element={<JobsPage onNavigate={handleNavigate} />} />
+        <Route path="/jobs/new" element={<NewJobPage onNavigate={handleNavigate} />} />
         <Route path="/jobs/:id" element={<JobsPage onNavigate={handleNavigate} />} />
         
         {/* Estimates */}
@@ -151,6 +159,8 @@ function AuthenticatedApp() {
         <Route path="/calendar" element={<CalendarPage onNavigate={handleNavigate} />} />
         <Route path="/reports" element={<ReportsPage onNavigate={handleNavigate} />} />
         <Route path="/settings" element={<SettingsPage onNavigate={handleNavigate} />} />
+        <Route path="/profile" element={<ProfilePage onNavigate={handleNavigate} />} />
+        <Route path="/help" element={<HelpPage onNavigate={handleNavigate} />} />
         
         {/* 404 fallback */}
         <Route path="*" element={<DashboardPage onNavigate={handleNavigate} />} />
@@ -195,6 +205,12 @@ function AppRoutes() {
         path="/register" 
         element={
           isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />
+        } 
+      />
+      <Route 
+        path="/forgot-password" 
+        element={
+          isAuthenticated ? <Navigate to="/" replace /> : <ForgotPasswordPage />
         } 
       />
       

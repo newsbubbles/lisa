@@ -279,7 +279,7 @@ export function EstimatesPage({ onNavigate }: EstimatesPageProps) {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <EmptyState
-          icon={<FileText className="h-12 w-12" />}
+          icon="default"
           title="Failed to load estimates"
           description={error}
           action={

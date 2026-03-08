@@ -135,7 +135,7 @@ export function ContactsPage({ onNavigate }: ContactsPageProps) {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <EmptyState
-          icon={<Users className="h-12 w-12" />}
+          icon="contacts"
           title="Failed to load contacts"
           description={error}
           action={

@@ -85,4 +85,44 @@ export function SettingsPage({ onNavigate }: { onNavigate?: (path: string) => vo
   )
 }
 
+export function ForgotPasswordPage({ onNavigate }: { onNavigate?: (path: string) => void }) {
+  return (
+    <PlaceholderPage
+      title="Forgot Password"
+      description="Password reset functionality coming soon."
+      onNavigate={onNavigate}
+    />
+  )
+}
+
+export function ProfilePage({ onNavigate }: { onNavigate?: (path: string) => void }) {
+  return (
+    <PlaceholderPage
+      title="My Profile"
+      description="Profile management coming soon."
+      onNavigate={onNavigate}
+    />
+  )
+}
+
+export function HelpPage({ onNavigate }: { onNavigate?: (path: string) => void }) {
+  return (
+    <PlaceholderPage
+      title="Help & Support"
+      description="Help documentation and support coming soon."
+      onNavigate={onNavigate}
+    />
+  )
+}
+
+export function NewJobPage({ onNavigate }: { onNavigate?: (path: string) => void }) {
+  return (
+    <PlaceholderPage
+      title="Create New Job"
+      description="Job creation form coming soon. For now, jobs are created from the pipeline board."
+      onNavigate={onNavigate}
+    />
+  )
+}
+
 export default PlaceholderPage

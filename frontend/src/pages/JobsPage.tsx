@@ -6,7 +6,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { useJobsStore } from '@/stores/jobs'
 import type { JobSummary, PipelineColumn } from '@/types/job'
 import type { JobStatus } from '@/components/ui/Badge'
-import { Plus, Search, Filter, LayoutGrid, List, RefreshCw, Briefcase } from 'lucide-react'
+import { Plus, Search, Filter, LayoutGrid, List, RefreshCw } from 'lucide-react'
 
 export interface JobsPageProps {
   onNavigate?: (path: string) => void
@@ -97,7 +97,7 @@ export function JobsPage({ onNavigate }: JobsPageProps) {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <EmptyState
-          icon={<Briefcase className="h-12 w-12" />}
+          icon="jobs"
           title="Failed to load jobs"
           description={error}
           action={
@@ -126,7 +126,7 @@ export function JobsPage({ onNavigate }: JobsPageProps) {
         
         <div className="flex-1 flex items-center justify-center p-4">
           <EmptyState
-            icon={<Briefcase className="h-12 w-12" />}
+            icon="jobs"
             title="No jobs yet"
             description="Create your first job to get started with your sales pipeline."
             action={

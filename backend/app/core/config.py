@@ -22,9 +22,13 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
 
+    # Server
+    HOST: str = "0.0.0.0"
+    PORT: int = 3002
+
     # API
     API_V1_PREFIX: str = "/api/v1"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3003"]
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
@@ -59,7 +63,7 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@lisaroofing.com"
 
     # Frontend URL (for email links)
-    FRONTEND_URL: str = "http://localhost:5173"
+    FRONTEND_URL: str = "http://localhost:3003"
 
     # Twilio
     TWILIO_ACCOUNT_SID: str | None = None
@@ -73,7 +77,7 @@ class Settings(BaseSettings):
     # QuickBooks Integration
     QUICKBOOKS_CLIENT_ID: str | None = None
     QUICKBOOKS_CLIENT_SECRET: str | None = None
-    QUICKBOOKS_REDIRECT_URI: str = "http://localhost:8000/api/v1/integrations/quickbooks/callback"
+    QUICKBOOKS_REDIRECT_URI: str = "http://localhost:3002/api/v1/integrations/quickbooks/callback"
 
 
 @lru_cache

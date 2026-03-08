@@ -242,7 +242,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             <Calendar className="h-4 w-4 mr-2" />
             View Calendar
           </Button>
-          <Button onClick={() => onNavigate?.('/jobs')}>
+          <Button onClick={() => onNavigate?.('/jobs/new')}>
             <Plus className="h-4 w-4 mr-2" />
             New Job
           </Button>
@@ -376,7 +376,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
             <Button 
               variant="secondary" 
               className="w-full justify-start"
-              onClick={() => onNavigate?.('/jobs')}
+              onClick={() => onNavigate?.('/jobs/new')}
             >
               <Briefcase className="h-4 w-4 mr-3" />
               New Job

@@ -45,6 +45,23 @@ export interface User {
   organizationName: string
 }
 
+/**
+ * @typedef {Object} AuthState
+ * @property {User|null} user - Current authenticated user
+ * @property {string|null} accessToken - JWT access token
+ * @property {boolean} isAuthenticated - Whether user is authenticated
+ * @property {boolean} isLoading - Whether auth operation is in progress
+ * @property {boolean} isInitialized - Whether auth state has been initialized
+ * @property {string|null} error - Auth error message
+ * @property {(email: string, password: string) => Promise<void>} login - Login with credentials
+ * @property {() => void} logout - Clear auth state and logout
+ * @property {(data: RegisterData) => Promise<void>} register - Register new user
+ * @property {() => Promise<void>} fetchUser - Fetch current user profile
+ * @property {() => Promise<void>} refreshAuth - Re-validate token and refresh user data
+ * @property {() => Promise<void>} initialize - Initialize auth state on app load
+ * @property {(user: User) => void} setUser - Update user in state
+ * @property {() => void} clearError - Clear error message
+ */
 export interface AuthState {
   // State
   user: User | null
@@ -59,6 +76,7 @@ export interface AuthState {
   logout: () => void
   register: (data: RegisterData) => Promise<void>
   fetchUser: () => Promise<void>
+  refreshAuth: () => Promise<void>
   initialize: () => Promise<void>
   setUser: (user: User) => void
   clearError: () => void
@@ -138,6 +156,31 @@ export const useAuthStore = create<AuthState>()(
         const response = await api.get('/auth/me')
         const user = transformUser(response.data)
         set({ user, isAuthenticated: true })
+      },
+
+      /**
+       * Re-validate token and refresh user data.
+       * Called by API interceptor on 401 errors to attempt token refresh.
+       * 
+       * Note: Current backend doesn't support refresh tokens, so this
+       * re-validates by fetching user profile. If that fails, the token
+       * is invalid and user should be logged out.
+       * 
+       * @throws {Error} If token is invalid or expired
+       */
+      refreshAuth: async () => {
+        const { accessToken } = get()
+        
+        if (!accessToken) {
+          throw new Error('No access token available')
+        }
+
+        // Ensure header is set (might have been cleared)
+        setAuthHeader(accessToken)
+        
+        // Validate token by fetching user profile
+        // If this fails, the token is invalid
+        await get().fetchUser()
       },
 
       // Login

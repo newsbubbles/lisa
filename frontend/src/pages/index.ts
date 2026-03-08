@@ -30,5 +30,9 @@ export {
   CalendarPage,
   ReportsPage,
   SettingsPage,
+  ForgotPasswordPage,
+  ProfilePage,
+  HelpPage,
+  NewJobPage,
 } from './PlaceholderPage'
 export type { PlaceholderPageProps } from './PlaceholderPage'

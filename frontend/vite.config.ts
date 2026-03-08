@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: parseInt(env.VITE_PORT || '3003'),
+      port: 3003,
+      strictPort: true,  // FAIL if port 3003 is in use, don't auto-increment
       proxy: {
         '/api': {
           target: env.VITE_API_URL || 'http://localhost:3002',

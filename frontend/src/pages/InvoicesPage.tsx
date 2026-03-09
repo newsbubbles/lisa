@@ -4,14 +4,16 @@ import { Button, Spinner, EmptyState } from '@/components/ui'
 import { Input } from '@/components/ui/Input'
 import { useUIStore } from '@/stores/uiStore'
 import { useInvoicesStore } from '@/stores/invoices'
-import { InvoiceDetailsDrawer } from '@/components/invoices/InvoiceDetailsDrawer'
+import { InvoiceDetailsDrawer, PaymentForm } from '@/components/invoices'
 import {
   type Invoice,
   type InvoiceStatus,
+  type CreatePaymentData,
   INVOICE_STATUS_CONFIG,
   formatCurrency,
 } from '@/types/invoice'
 import { formatDate } from '@/lib/utils'
+import { downloadInvoicePdf } from '@/lib/invoicePdf'
 import {
   Plus,
   Search,
@@ -46,6 +48,8 @@ interface InvoiceRowProps {
   onEdit: () => void
   onSend: () => void
   onRecordPayment: () => void
+  onDownloadPdf: () => void
+  isDownloading?: boolean
   onDelete: () => void
 }
 
@@ -55,6 +59,8 @@ function InvoiceRow({
   onEdit,
   onSend,
   onRecordPayment,
+  onDownloadPdf,
+  isDownloading,
   onDelete,
 }: InvoiceRowProps) {
   const [menuOpen, setMenuOpen] = React.useState(false)
@@ -175,13 +181,14 @@ function InvoiceRow({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  // TODO: Implement PDF download
-                  console.log('Download PDF:', invoice.id)
+                  setMenuOpen(false)
+                  onDownloadPdf()
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                disabled={isDownloading}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
               >
-                <Download className="h-4 w-4" />
-                Download PDF
+                <Download className={`h-4 w-4 ${isDownloading ? 'animate-pulse' : ''}`} />
+                {isDownloading ? 'Downloading...' : 'Download PDF'}
               </button>
               <hr className="my-1" />
               <button
@@ -271,6 +278,7 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
     fetchInvoices,
     deleteInvoice,
     sendInvoice,
+    recordPayment,
     clearError,
   } = useInvoicesStore()
 
@@ -280,6 +288,9 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
   )
   const [selectedInvoice, setSelectedInvoice] = React.useState<Invoice | null>(null)
   const [drawerOpen, setDrawerOpen] = React.useState(false)
+  const [paymentInvoice, setPaymentInvoice] = React.useState<Invoice | null>(null)
+  const [isRecordingPayment, setIsRecordingPayment] = React.useState(false)
+  const [isDownloadingPdf, setIsDownloadingPdf] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     setPageTitle('Invoices')
@@ -358,8 +369,44 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
     }
   }
 
-  const handleRecordPayment = (id: string) => {
-    onNavigate?.(`/invoices/${id}/payment`)
+  const handleRecordPayment = (invoice: Invoice) => {
+    setPaymentInvoice(invoice)
+  }
+
+  const handlePaymentSubmit = async (data: CreatePaymentData) => {
+    if (!paymentInvoice) return
+    setIsRecordingPayment(true)
+    try {
+      await recordPayment(paymentInvoice.id, data)
+      setPaymentInvoice(null)
+      // Refresh invoice list to show updated payment status
+      await fetchInvoices()
+    } catch (err) {
+      // Error handled by store
+    } finally {
+      setIsRecordingPayment(false)
+    }
+  }
+
+  const handleDownloadPdf = async (invoice: Invoice) => {
+    setIsDownloadingPdf(invoice.id)
+    try {
+      await downloadInvoicePdf(invoice, {
+        companyName: 'Lisa Roofing', // TODO: Get from organization settings
+        companyAddress: [
+          '123 Main Street',
+          'Anytown, ST 12345',
+        ],
+        companyContact: {
+          phone: '(555) 123-4567',
+          email: 'info@lisaroofing.com',
+        },
+      })
+    } catch (err) {
+      console.error('Failed to download PDF:', err)
+    } finally {
+      setIsDownloadingPdf(null)
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -571,7 +618,9 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
                         onView={() => handleView(invoice)}
                         onEdit={() => handleEdit(invoice.id)}
                         onSend={() => handleSend(invoice.id)}
-                        onRecordPayment={() => handleRecordPayment(invoice.id)}
+                        onRecordPayment={() => handleRecordPayment(invoice)}
+                        onDownloadPdf={() => handleDownloadPdf(invoice)}
+                        isDownloading={isDownloadingPdf === invoice.id}
                         onDelete={() => handleDelete(invoice.id)}
                       />
                     ))}
@@ -606,18 +655,25 @@ export function InvoicesPage({ onNavigate }: InvoicesPageProps) {
         onSend={(inv) => handleSend(inv.id)}
         onRecordPayment={(inv) => {
           handleCloseDrawer()
-          handleRecordPayment(inv.id)
+          handleRecordPayment(inv)
         }}
-        onDownloadPdf={(inv) => {
-          // TODO: Implement PDF download
-          console.log('Download PDF for invoice:', inv.id)
-        }}
+        onDownloadPdf={(inv) => handleDownloadPdf(inv)}
         onViewJob={(jobId) => {
           handleCloseDrawer()
           onNavigate?.(`/jobs/${jobId}`)
         }}
         onDelete={(inv) => handleDelete(inv.id)}
       />
+
+      {/* Payment Form Modal */}
+      {paymentInvoice && (
+        <PaymentForm
+          invoice={paymentInvoice}
+          isSubmitting={isRecordingPayment}
+          onSubmit={handlePaymentSubmit}
+          onCancel={() => setPaymentInvoice(null)}
+        />
+      )}
     </div>
   )
 }

@@ -27,6 +27,9 @@ export type { ContactsPageProps } from './ContactsPage'
 export { InvoicesPage } from './InvoicesPage'
 export type { InvoicesPageProps } from './InvoicesPage'
 
+export { InvoiceFormPage } from './InvoiceFormPage'
+export type { InvoiceFormPageProps } from './InvoiceFormPage'
+
 export { 
   PlaceholderPage,
   CalendarPage,

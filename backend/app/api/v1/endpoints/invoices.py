@@ -36,8 +36,8 @@ def build_job_summary(job: Job) -> JobSummaryForInvoice:
         customer_name = f"{job.contact.first_name} {job.contact.last_name}".strip()
         customer_email = job.contact.email
     
-    if job.property:
-        parts = [job.property.street, job.property.city, job.property.state, job.property.zip]
+    if job.job_property:
+        parts = [job.job_property.address_line1, job.job_property.city, job.job_property.state, job.job_property.zip_code]
         property_address = ", ".join(p for p in parts if p)
     
     return JobSummaryForInvoice(
@@ -99,7 +99,7 @@ async def list_invoices(
             selectinload(Invoice.line_items),
             selectinload(Invoice.payments),
             selectinload(Invoice.job).selectinload(Job.contact),
-            selectinload(Invoice.job).selectinload(Job.property),
+            selectinload(Invoice.job).selectinload(Job.job_property),
         )
         .where(Invoice.job_id.in_(jobs_query))
     )
@@ -204,9 +204,52 @@ async def create_invoice(
     calculate_invoice_totals(invoice)
     
     await db.commit()
-    await db.refresh(invoice)
     
-    return invoice
+    # Re-query with all relationships for response
+    result = await db.execute(
+        select(Invoice)
+        .options(
+            selectinload(Invoice.line_items),
+            selectinload(Invoice.payments),
+            selectinload(Invoice.job).selectinload(Job.contact),
+            selectinload(Invoice.job).selectinload(Job.job_property),
+        )
+        .where(Invoice.id == invoice.id)
+    )
+    invoice = result.scalar_one()
+    
+    # Build response with job summary
+    invoice_dict = {
+        "id": invoice.id,
+        "job_id": invoice.job_id,
+        "invoice_number": invoice.invoice_number,
+        "status": invoice.status,
+        "invoice_date": invoice.invoice_date,
+        "due_date": invoice.due_date,
+        "sent_at": invoice.sent_at,
+        "paid_at": invoice.paid_at,
+        "subtotal": invoice.subtotal,
+        "tax_rate": invoice.tax_rate,
+        "tax_amount": invoice.tax_amount,
+        "discount_amount": invoice.discount_amount,
+        "total": invoice.total,
+        "amount_paid": invoice.amount_paid,
+        "balance_due": invoice.balance_due,
+        "notes": invoice.notes,
+        "terms": invoice.terms,
+        "pdf_url": invoice.pdf_url,
+        "payment_link": invoice.payment_link,
+        "stripe_invoice_id": invoice.stripe_invoice_id,
+        "quickbooks_invoice_id": invoice.quickbooks_invoice_id,
+        "quickbooks_sync_status": invoice.quickbooks_sync_status,
+        "line_items": invoice.line_items,
+        "payments": invoice.payments,
+        "job": build_job_summary(invoice.job) if invoice.job else None,
+        "is_overdue": invoice.is_overdue,
+        "created_at": invoice.created_at,
+        "updated_at": invoice.updated_at,
+    }
+    return InvoiceResponse(**invoice_dict)
 
 
 @router.get("/{invoice_id}", response_model=InvoiceResponse)
@@ -226,7 +269,7 @@ async def get_invoice(
             selectinload(Invoice.line_items),
             selectinload(Invoice.payments),
             selectinload(Invoice.job).selectinload(Job.contact),
-            selectinload(Invoice.job).selectinload(Job.property),
+            selectinload(Invoice.job).selectinload(Job.job_property),
         )
         .where(Invoice.id == invoice_id, Invoice.job_id.in_(jobs_query))
     )
@@ -286,6 +329,8 @@ async def update_invoice(
         .options(
             selectinload(Invoice.line_items),
             selectinload(Invoice.payments),
+            selectinload(Invoice.job).selectinload(Job.contact),
+            selectinload(Invoice.job).selectinload(Job.job_property),
         )
         .where(Invoice.id == invoice_id, Invoice.job_id.in_(jobs_query))
     )
@@ -302,9 +347,52 @@ async def update_invoice(
     calculate_invoice_totals(invoice)
     
     await db.commit()
-    await db.refresh(invoice)
     
-    return invoice
+    # Re-query with all relationships for response
+    result = await db.execute(
+        select(Invoice)
+        .options(
+            selectinload(Invoice.line_items),
+            selectinload(Invoice.payments),
+            selectinload(Invoice.job).selectinload(Job.contact),
+            selectinload(Invoice.job).selectinload(Job.job_property),
+        )
+        .where(Invoice.id == invoice_id)
+    )
+    invoice = result.scalar_one()
+    
+    # Build response with job summary
+    invoice_dict = {
+        "id": invoice.id,
+        "job_id": invoice.job_id,
+        "invoice_number": invoice.invoice_number,
+        "status": invoice.status,
+        "invoice_date": invoice.invoice_date,
+        "due_date": invoice.due_date,
+        "sent_at": invoice.sent_at,
+        "paid_at": invoice.paid_at,
+        "subtotal": invoice.subtotal,
+        "tax_rate": invoice.tax_rate,
+        "tax_amount": invoice.tax_amount,
+        "discount_amount": invoice.discount_amount,
+        "total": invoice.total,
+        "amount_paid": invoice.amount_paid,
+        "balance_due": invoice.balance_due,
+        "notes": invoice.notes,
+        "terms": invoice.terms,
+        "pdf_url": invoice.pdf_url,
+        "payment_link": invoice.payment_link,
+        "stripe_invoice_id": invoice.stripe_invoice_id,
+        "quickbooks_invoice_id": invoice.quickbooks_invoice_id,
+        "quickbooks_sync_status": invoice.quickbooks_sync_status,
+        "line_items": invoice.line_items,
+        "payments": invoice.payments,
+        "job": build_job_summary(invoice.job) if invoice.job else None,
+        "is_overdue": invoice.is_overdue,
+        "created_at": invoice.created_at,
+        "updated_at": invoice.updated_at,
+    }
+    return InvoiceResponse(**invoice_dict)
 
 
 @router.delete("/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -420,6 +508,8 @@ async def send_invoice(
         .options(
             selectinload(Invoice.line_items),
             selectinload(Invoice.payments),
+            selectinload(Invoice.job).selectinload(Job.contact),
+            selectinload(Invoice.job).selectinload(Job.job_property),
         )
         .where(Invoice.id == invoice_id, Invoice.job_id.in_(jobs_query))
     )
@@ -435,6 +525,49 @@ async def send_invoice(
     # TODO: Create Stripe payment link
     
     await db.commit()
-    await db.refresh(invoice)
     
-    return invoice
+    # Re-query with all relationships for response
+    result = await db.execute(
+        select(Invoice)
+        .options(
+            selectinload(Invoice.line_items),
+            selectinload(Invoice.payments),
+            selectinload(Invoice.job).selectinload(Job.contact),
+            selectinload(Invoice.job).selectinload(Job.job_property),
+        )
+        .where(Invoice.id == invoice_id)
+    )
+    invoice = result.scalar_one()
+    
+    # Build response with job summary
+    invoice_dict = {
+        "id": invoice.id,
+        "job_id": invoice.job_id,
+        "invoice_number": invoice.invoice_number,
+        "status": invoice.status,
+        "invoice_date": invoice.invoice_date,
+        "due_date": invoice.due_date,
+        "sent_at": invoice.sent_at,
+        "paid_at": invoice.paid_at,
+        "subtotal": invoice.subtotal,
+        "tax_rate": invoice.tax_rate,
+        "tax_amount": invoice.tax_amount,
+        "discount_amount": invoice.discount_amount,
+        "total": invoice.total,
+        "amount_paid": invoice.amount_paid,
+        "balance_due": invoice.balance_due,
+        "notes": invoice.notes,
+        "terms": invoice.terms,
+        "pdf_url": invoice.pdf_url,
+        "payment_link": invoice.payment_link,
+        "stripe_invoice_id": invoice.stripe_invoice_id,
+        "quickbooks_invoice_id": invoice.quickbooks_invoice_id,
+        "quickbooks_sync_status": invoice.quickbooks_sync_status,
+        "line_items": invoice.line_items,
+        "payments": invoice.payments,
+        "job": build_job_summary(invoice.job) if invoice.job else None,
+        "is_overdue": invoice.is_overdue,
+        "created_at": invoice.created_at,
+        "updated_at": invoice.updated_at,
+    }
+    return InvoiceResponse(**invoice_dict)

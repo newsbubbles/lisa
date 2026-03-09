@@ -10,6 +10,7 @@ import {
   EstimatesPage,
   EstimateBuilderPage,
   InvoicesPage,
+  InvoiceFormPage,
   ContactsPage,
   CalendarPage,
   ReportsPage,
@@ -31,6 +32,7 @@ const routeToPageId: Record<string, string> = {
   '/estimates': 'estimates',
   '/estimates/new': 'estimates',
   '/invoices': 'invoices',
+  '/invoices/new': 'invoices',
   '/contacts': 'contacts',
   '/calendar': 'calendar',
   '/reports': 'reports',
@@ -153,8 +155,12 @@ function AuthenticatedApp() {
         <Route path="/estimates/:id" element={<EstimatesPage onNavigate={handleNavigate} />} />
         <Route path="/estimates/:id/edit" element={<EstimateBuilderPage onNavigate={handleNavigate} />} />
         
-        {/* Placeholder pages */}
+        {/* Invoices */}
         <Route path="/invoices" element={<InvoicesPage onNavigate={handleNavigate} />} />
+        <Route path="/invoices/new" element={<InvoiceFormPage onNavigate={handleNavigate} />} />
+        <Route path="/invoices/:id/edit" element={<InvoiceFormPage onNavigate={handleNavigate} />} />
+        
+        {/* Placeholder pages */}
         <Route path="/contacts" element={<ContactsPage onNavigate={handleNavigate} />} />
         <Route path="/calendar" element={<CalendarPage onNavigate={handleNavigate} />} />
         <Route path="/reports" element={<ReportsPage onNavigate={handleNavigate} />} />

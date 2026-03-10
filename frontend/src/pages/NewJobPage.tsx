@@ -25,8 +25,9 @@ import {
   Building2,
 } from 'lucide-react'
 import { useJobsStore } from '@/stores/jobs'
-import { useContactsStore } from '@/stores/contacts'
 import { api } from '@/lib/api'
+import { ContactSelector, PropertySelector, UserSelector } from '@/components/forms'
+import { toCamelCase } from '@/lib/transforms'
 import { toSnakeCase } from '@/lib/transforms'
 
 // Job type options matching backend enum
@@ -56,30 +57,29 @@ const JOB_STATUSES = [
   { value: 'on_hold', label: 'On Hold' },
 ]
 
-interface Contact {
+// Contact type from API (camelCase after transform)
+interface ContactFromAPI {
   id: string
-  first_name: string
-  last_name: string
-  company_name?: string
-  display_name: string
-  properties: Property[]
+  firstName: string
+  lastName: string
+  companyName?: string
+  displayName: string
+  fullName: string
+  properties: PropertyFromAPI[]
 }
 
-interface Property {
+// Property type from API (camelCase after transform)
+interface PropertyFromAPI {
   id: string
-  address_line1: string
-  address_line2?: string
+  contactId: string
+  addressLine1: string
+  addressLine2?: string
   city: string
   state: string
-  zip_code: string
-  full_address: string
-}
-
-interface User {
-  id: string
-  first_name: string
-  last_name: string
-  email: string
+  zipCode: string
+  fullAddress: string
+  isPrimary: boolean
+  propertyType: string
 }
 
 interface FormData {
@@ -144,60 +144,10 @@ export function NewJobPage() {
   const { createJob, isLoading, error: storeError } = useJobsStore()
 
   const [formData, setFormData] = useState<FormData>(initialFormData)
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [users, setUsers] = useState<User[]>([])
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [selectedContact, setSelectedContact] = useState<ContactFromAPI | null>(null)
   const [showInsurance, setShowInsurance] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [loadingContacts, setLoadingContacts] = useState(true)
-  const [loadingUsers, setLoadingUsers] = useState(true)
-
-  // Load contacts on mount
-  useEffect(() => {
-    const loadContacts = async () => {
-      try {
-        const response = await api.get('/contacts?page_size=100')
-        setContacts(response.data.items || [])
-      } catch (err) {
-        console.error('Failed to load contacts:', err)
-      } finally {
-        setLoadingContacts(false)
-      }
-    }
-    loadContacts()
-  }, [])
-
-  // Load users on mount
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const response = await api.get('/users')
-        setUsers(response.data || [])
-      } catch (err) {
-        console.error('Failed to load users:', err)
-      } finally {
-        setLoadingUsers(false)
-      }
-    }
-    loadUsers()
-  }, [])
-
-  // Update selected contact when contactId changes
-  useEffect(() => {
-    if (formData.contactId) {
-      const contact = contacts.find((c) => c.id === formData.contactId)
-      setSelectedContact(contact || null)
-      // Reset property if contact changed
-      if (contact && formData.propertyId) {
-        const propertyExists = contact.properties?.some((p) => p.id === formData.propertyId)
-        if (!propertyExists) {
-          setFormData((prev) => ({ ...prev, propertyId: '' }))
-        }
-      }
-    } else {
-      setSelectedContact(null)
-    }
-  }, [formData.contactId, contacts])
+  const [submitting, setSubmitting] = useState(false)
 
   // Toggle insurance section visibility based on checkbox
   useEffect(() => {
@@ -205,6 +155,35 @@ export function NewJobPage() {
       setShowInsurance(true)
     }
   }, [formData.isInsuranceJob])
+
+  // Handle contact selection from ContactSelector
+  const handleContactChange = (contactId: string | null, contact?: ContactFromAPI) => {
+    setFormData((prev) => ({
+      ...prev,
+      contactId: contactId || '',
+      propertyId: '', // Reset property when contact changes
+    }))
+    setSelectedContact(contact || null)
+    setFormError(null)
+  }
+
+  // Handle property selection from PropertySelector
+  const handlePropertyChange = (propertyId: string | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      propertyId: propertyId || '',
+    }))
+    setFormError(null)
+  }
+
+  // Handle user selection from UserSelector
+  const handleUserChange = (userId: string | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      assignedToId: userId || '',
+    }))
+    setFormError(null)
+  }
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -230,6 +209,8 @@ export function NewJobPage() {
     }
 
     try {
+      setSubmitting(true)
+
       // Build payload with snake_case keys for backend
       const payload: Record<string, unknown> = {
         title: formData.title.trim(),
@@ -277,6 +258,8 @@ export function NewJobPage() {
     } catch (err: any) {
       console.error('Failed to create job:', err)
       setFormError(err.response?.data?.detail || 'Failed to create job')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -297,11 +280,11 @@ export function NewJobPage() {
           <button
             type="submit"
             form="job-form"
-            disabled={isLoading}
+            disabled={submitting}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4" />
-            {isLoading ? 'Saving...' : 'Save Job'}
+            {submitting ? 'Saving...' : 'Save Job'}
           </button>
         </div>
       </div>
@@ -392,50 +375,21 @@ export function NewJobPage() {
             <h2 className="font-medium text-gray-900">Customer & Property</h2>
           </div>
           <div className="p-4 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-              <select
-                name="contactId"
-                value={formData.contactId}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={loadingContacts}
-              >
-                <option value="">Select a customer...</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.display_name || `${contact.first_name} ${contact.last_name}`}
-                  </option>
-                ))}
-              </select>
-              {loadingContacts && (
-                <p className="mt-1 text-sm text-gray-500">Loading customers...</p>
-              )}
-            </div>
+            <ContactSelector
+              value={formData.contactId || null}
+              onChange={handleContactChange}
+              label="Customer"
+              placeholder="Search customers..."
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Property</label>
-              <select
-                name="propertyId"
-                value={formData.propertyId}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={!selectedContact || !selectedContact.properties?.length}
-              >
-                <option value="">
-                  {!formData.contactId
-                    ? 'Select a customer first'
-                    : selectedContact?.properties?.length
-                      ? 'Select a property...'
-                      : 'No properties for this customer'}
-                </option>
-                {selectedContact?.properties?.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.full_address || `${property.address_line1}, ${property.city}, ${property.state}`}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <PropertySelector
+              value={formData.propertyId || null}
+              onChange={handlePropertyChange}
+              contactId={formData.contactId || null}
+              properties={selectedContact?.properties}
+              label="Property"
+              placeholder="Select a property..."
+            />
           </div>
         </section>
 
@@ -446,23 +400,13 @@ export function NewJobPage() {
             <h2 className="font-medium text-gray-900">Assignment & Scheduling</h2>
           </div>
           <div className="p-4 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
-              <select
-                name="assignedToId"
-                value={formData.assignedToId}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={loadingUsers}
-              >
-                <option value="">Unassigned</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <UserSelector
+              value={formData.assignedToId || null}
+              onChange={handleUserChange}
+              label="Assigned To"
+              placeholder="Select a team member..."
+              allowUnassigned={true}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -730,11 +674,11 @@ export function NewJobPage() {
         <div className="pb-6 md:hidden">
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={submitting}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             <Save className="w-5 h-5" />
-            {isLoading ? 'Saving...' : 'Save Job'}
+            {submitting ? 'Saving...' : 'Save Job'}
           </button>
         </div>
       </form>

@@ -38,6 +38,8 @@ export {
   ForgotPasswordPage,
   ProfilePage,
   HelpPage,
-  NewJobPage,
 } from './PlaceholderPage'
+
+// Job form page
+export { NewJobPage } from './NewJobPage'
 export type { PlaceholderPageProps } from './PlaceholderPage'

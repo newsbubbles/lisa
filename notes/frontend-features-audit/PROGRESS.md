@@ -1,7 +1,7 @@
 # Frontend Features Audit - Progress Report
 
-**Last Updated**: 2026-03-07  
-**Status**: In Progress (Day 6 - Invoices Routes Complete)
+**Last Updated**: 2026-03-09  
+**Status**: In Progress (Day 6 - New Job Form Complete)
 
 ---
 
@@ -11,7 +11,7 @@
 |-------|--------|-------|
 | Phase 1: Core Types & Infrastructure | ✅ Complete | Types created, store created |
 | Phase 2: Invoices Module | ✅ Complete | All components + routes + PDF export |
-| Phase 3: New Job Form | ❌ Not Started | |
+| Phase 3: New Job Form | ✅ Complete | NewJobPage.tsx created |
 | Phase 4: Job-Invoice Integration | ❌ Not Started | |
 | Phase 5: Quick Wins | ❌ Not Started | |
 
@@ -261,6 +261,32 @@ During API testing, fixed 4 bugs in `backend/app/api/v1/endpoints/invoices.py`:
 4. **MissingGreenlet error**: `db.refresh()` loses eager-loaded relationships in async context; fixed by re-querying after commit
 
 **All 8 invoice API endpoints now passing**: LIST, CREATE, GET, UPDATE, DELETE, Record Payment, List Payments, Send Invoice
+
+---
+
+### Day 6 - New Job Form ✅
+
+#### Created
+- `frontend/src/pages/NewJobPage.tsx` - Full multi-section job creation form:
+  - **Basic Info**: Title, Job Type (9 options), Status (10 options), Description
+  - **Customer & Property**: Contact selector (loads from API), Property selector (filtered by contact)
+  - **Assignment & Scheduling**: Assigned To (loads users from API), Scheduled Date/Time, Duration
+  - **Financial**: Estimated Value
+  - **Insurance** (Collapsible): Toggle, Company, Claim #, Adjuster info, Deductible
+  - **Additional**: Crew/Team, Tags (comma-separated)
+
+#### Technical Details
+- Form sends snake_case payload directly to backend (matching JobCreate schema)
+- Loads contacts via `/contacts?page_size=100`
+- Loads users via `/users`
+- Properties are filtered based on selected contact
+- Insurance section auto-expands when checkbox is checked
+- Mobile-responsive with sticky header and bottom submit button
+
+#### Backend Verified
+- Tested Jobs API endpoints working correctly
+- Confirmed field names match backend schema (snake_case)
+- Contact returns nested properties array for property selection
 
 ---
 

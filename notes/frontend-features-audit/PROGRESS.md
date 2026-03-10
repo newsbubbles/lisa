@@ -12,6 +12,7 @@
 | Phase 1: Core Types & Infrastructure | ✅ Complete | Types created, store created |
 | Phase 2: Invoices Module | ✅ Complete | All components + routes + PDF export |
 | Phase 3: New Job Form | ✅ Complete | NewJobPage.tsx created |
+| Phase 3.2: Form Components | ✅ Complete | Combobox, ContactSelector, PropertySelector, UserSelector |
 | Phase 4: Job-Invoice Integration | ❌ Not Started | |
 | Phase 5: Quick Wins | ❌ Not Started | |
 
@@ -287,6 +288,41 @@ During API testing, fixed 4 bugs in `backend/app/api/v1/endpoints/invoices.py`:
 - Tested Jobs API endpoints working correctly
 - Confirmed field names match backend schema (snake_case)
 - Contact returns nested properties array for property selection
+
+---
+
+### Day 7 - Searchable Selector Components ✅
+
+#### Created: `frontend/src/components/forms/`
+
+1. **Combobox.tsx** - Base searchable dropdown component
+   - Keyboard navigation (Arrow keys, Enter, Escape)
+   - Search filtering
+   - Custom footer slot (for "Add New" buttons)
+   - Clearable selection
+   - Loading state
+   - Error state
+
+2. **ContactSelector.tsx** - Contact search/select with inline creation
+   - Loads contacts from `/contacts?page_size=100`
+   - Quick "Add New Contact" modal (first name, last name, email, phone, company)
+   - Returns full contact object on selection (includes properties array)
+
+3. **PropertySelector.tsx** - Property selector filtered by contact
+   - Automatically filters by selected contact
+   - Accepts pre-loaded properties from ContactSelector
+   - Quick "Add New Property" modal (address, city, state, ZIP)
+   - Posts to `/contacts/{id}/properties` endpoint
+
+4. **UserSelector.tsx** - User selector for assignment
+   - Loads users from `/users`
+   - Shows user name + role
+   - Filters to active users only
+
+#### Updated: `NewJobPage.tsx`
+- Replaced basic `<select>` elements with new selector components
+- Contact selection now automatically populates property options
+- Users can create contacts/properties inline without leaving the form
 
 ---
 
